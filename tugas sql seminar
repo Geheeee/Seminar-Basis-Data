@@ -1,0 +1,126 @@
+-- Tabel untuk data kendaraan
+CREATE TABLE kendaraan (
+    kendaraan_id INT PRIMARY KEY AUTO_INCREMENT,
+    plat_nomor VARCHAR(15) NOT NULL,
+    jenis_kendaraan VARCHAR(50),
+    kapasitas INT,
+    status VARCHAR(20) -- Contoh: aktif, dalam perbaikan, dsb.
+);
+
+-- Tabel untuk rute
+CREATE TABLE rute (
+    rute_id INT PRIMARY KEY AUTO_INCREMENT,
+    nama_rute VARCHAR(100),
+    titik_awal VARCHAR(100),
+    titik_akhir VARCHAR(100)
+);
+
+-- Tabel untuk jadwal
+CREATE TABLE jadwal (
+    jadwal_id INT PRIMARY KEY AUTO_INCREMENT,
+    kendaraan_id INT,
+    rute_id INT,
+    waktu_berangkat TIME,
+    waktu_tiba TIME,
+    FOREIGN KEY (kendaraan_id) REFERENCES kendaraan(kendaraan_id),
+    FOREIGN KEY (rute_id) REFERENCES rute(rute_id)
+);
+
+-- Tabel untuk data lalu lintas
+CREATE TABLE lalu_lintas (
+    lalu_lintas_id INT PRIMARY KEY AUTO_INCREMENT,
+    rute_id INT,
+    waktu TIMESTAMP,
+    kepadatan INT, -- Skala 0 - 100
+    kecelakaan BOOLEAN,
+    FOREIGN KEY (rute_id) REFERENCES rute(rute_id)
+);
+
+-- Tabel untuk pengguna
+CREATE TABLE pengguna (
+    pengguna_id INT PRIMARY KEY AUTO_INCREMENT,
+    nama VARCHAR(100),
+    alamat VARCHAR(255),
+    jenis_kelamin VARCHAR(10),
+    umur INT
+);
+
+-- Tabel untuk pemesanan kendaraan oleh pengguna
+CREATE TABLE pemesanan (
+    pemesanan_id INT PRIMARY KEY AUTO_INCREMENT,
+    pengguna_id INT,
+    kendaraan_id INT,
+    tanggal_pemesanan DATE,
+    status_pemesanan VARCHAR(20),
+    FOREIGN KEY (pengguna_id) REFERENCES pengguna(pengguna_id),
+    FOREIGN KEY (kendaraan_id) REFERENCES kendaraan(kendaraan_id)
+);
+
+-- Tabel untuk data sensor lingkungan
+CREATE TABLE sensor_lingkungan (
+    sensor_id INT PRIMARY KEY AUTO_INCREMENT,
+    tipe_sensor VARCHAR(50), -- Contoh: suhu, kelembaban, kualitas udara
+    nilai FLOAT,
+    waktu TIMESTAMP
+);
+
+-- Tabel untuk titik pengumpulan sampah
+CREATE TABLE titik_pengumpulan (
+    titik_id INT PRIMARY KEY AUTO_INCREMENT,
+    lokasi VARCHAR(255),
+    kapasitas INT
+);
+
+-- Tabel untuk jenis sampah
+CREATE TABLE jenis_sampah (
+    jenis_id INT PRIMARY KEY AUTO_INCREMENT,
+    nama_jenis VARCHAR(50)
+);
+
+-- Tabel untuk pengumpulan sampah
+CREATE TABLE pengumpulan_sampah (
+    pengumpulan_id INT PRIMARY KEY AUTO_INCREMENT,
+    titik_id INT,
+    jenis_id INT,
+    jumlah INT, -- Dalam kilogram atau satuan lainnya
+    waktu TIMESTAMP,
+    FOREIGN KEY (titik_id) REFERENCES titik_pengumpulan(titik_id),
+    FOREIGN KEY (jenis_id) REFERENCES jenis_sampah(jenis_id)
+);
+
+-- Tabel untuk truk pengangkut sampah
+CREATE TABLE truk_pengangkut (
+    truk_id INT PRIMARY KEY AUTO_INCREMENT,
+    plat_nomor VARCHAR(15),
+    kapasitas INT
+);
+
+-- Tabel untuk pengangkutan sampah
+CREATE TABLE pengangkutan_sampah (
+    pengangkutan_id INT PRIMARY KEY AUTO_INCREMENT,
+    truk_id INT,
+    pengumpulan_id INT,
+    waktu_pengangkutan TIMESTAMP,
+    FOREIGN KEY (truk_id) REFERENCES truk_pengangkut(truk_id),
+    FOREIGN KEY (pengumpulan_id) REFERENCES pengumpulan_sampah(pengumpulan_id)
+);
+
+-- Contoh Query Analisis Lalu Lintas
+SELECT waktu, kepadatan, kecelakaan
+FROM lalu_lintas
+WHERE rute_id = 1
+AND waktu BETWEEN '2024-11-01 00:00:00' AND '2024-11-19 23:59:59';
+
+-- Contoh Query Analisis Data Sensor (Rata-rata Suhu)
+SELECT AVG(nilai) AS rata_rata_suhu
+FROM sensor_lingkungan
+WHERE tipe_sensor = 'suhu'
+AND waktu BETWEEN '2024-11-01 00:00:00' AND '2024-11-19 23:59:59';
+
+-- Contoh Query untuk Melacak Sampah dari Sumber ke Tempat Pembuangan
+SELECT p.waktu, ts.lokasi, js.nama_jenis, ps.jumlah
+FROM pengumpulan_sampah ps
+JOIN titik_pengumpulan ts ON ps.titik_id = ts.titik_id
+JOIN jenis_sampah js ON ps.jenis_id = js.jenis_id
+WHERE ts.lokasi = 'Lokasi A'
+AND ps.waktu BETWEEN '2024-11-01' AND '2024-11-19';
